@@ -1,12 +1,30 @@
 #ifndef CALC3
 #define CALC3
 
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
 
 #include <cmath>
+#include <numeric>
 #include <algorithm>
 
 namespace c3d
 {
+
+////
+// Constants.
+////
+
+constexpr float pi = 3.1415926535897932384626f;
+constexpr float eps = 16 * std::numeric_limits<float>::epsilon();
+
+////
+// Mat class.
+////
 
 template<typename ValType, int NumRows, int NumCols>
 class Mat;
@@ -22,8 +40,8 @@ public:
 	ValType& operator[](const int i) { return (&x)[i]; }
 };
 
-using vec2 = Mat<float, 2, 1>;
-using ivec2 = Mat<int, 2, 1>;
+using Vec2 = Mat<float, 2, 1>;
+using iVec2 = Mat<int, 2, 1>;
 
 template<typename ValType>
 class Mat<ValType, 3, 1> {
@@ -38,8 +56,8 @@ public:
 
 };
 
-using vec3 = Mat<float, 3, 1>;
-using ivec3 = Mat<int, 3, 1>;
+using Vec3 = Mat<float, 3, 1>;
+using iVec3 = Mat<int, 3, 1>;
 
 template<typename ValType>
 class Mat<ValType, 4, 1> {
@@ -55,8 +73,8 @@ public:
 
 };
 
-using vec4 = Mat<float, 4, 1>;
-using ivec4 = Mat<int, 4, 1>;
+using Vec4 = Mat<float, 4, 1>;
+using iVec4 = Mat<int, 4, 1>;
 
 template<typename ValType>
 class Mat<ValType, 2, 2> {
@@ -73,10 +91,18 @@ public:
 		std::swap((*this)[0][1], (*this)[1][0]);
 		return *this;
 	}
+
+	static Mat<ValType, 2, 2> Eye()
+	{
+		Mat<ValType, 2, 2> m{};
+		for (int i = 0; i < 2; ++i)
+			m[i][i] = 1;
+		return m;
+	}
 };
 
-using imat2 = Mat<int, 2, 2>;
-using mat2 = Mat<float, 2, 2>;
+using Mat2 = Mat<float, 2, 2>;
+using iMat2 = Mat<int, 2, 2>;
 
 template<typename ValType>
 class Mat<ValType, 3, 3> {
@@ -96,10 +122,18 @@ public:
 		std::swap((*this)[1][2], (*this)[2][1]);
 		return *this;
 	}
+
+	static Mat<ValType, 3, 3> Eye()
+	{
+		Mat<ValType, 3, 3> m{};
+		for (int i = 0; i < 3; ++i)
+			m[i][i] = 1;
+		return m;
+	}
 };
 
-using imat3 = Mat<int, 3, 3>;
-using mat3 = Mat<float, 3, 3>;
+using Mat3 = Mat<float, 3, 3>;
+using iMat3 = Mat<int, 3, 3>;
 
 template<typename ValType>
 class Mat<ValType, 4, 4> {
@@ -123,10 +157,18 @@ public:
 		std::swap((*this)[2][3], (*this)[3][2]);
 		return *this;
 	}
+
+	static Mat<ValType, 4, 4> Eye()
+	{
+		Mat<ValType, 4, 4> m{};
+		for (int i = 0; i < 4; ++i)
+			m[i][i] = 1;
+		return m;
+	}
 };
 
-using imat4 = Mat<int, 4, 4>;
-using mat4 = Mat<float, 4, 4>;
+using Mat4 = Mat<float, 4, 4>;
+using iMat4 = Mat<int, 4, 4>;
 
 ////
 // begin & end functions:
@@ -267,6 +309,13 @@ ElementwiseOpsForMat(/);
 ////
 // Matrix operations.
 ////
+
+template<typename ValType, int NumRows>
+std::enable_if_t<(NumRows>1), Mat<ValType, NumRows, NumRows>>
+Transpose(Mat<ValType, NumRows, NumRows> m)
+{
+	return m.T();
+}
 
 inline auto Det(const Mat<float, 2, 2> &m)
 {
@@ -431,9 +480,9 @@ auto Normalize(const Mat<float, NumRows, 1>& v)
 	return v / Length(v);
 }
 
-inline vec3 Cross(const vec3& p, const vec3& q)
+inline Vec3 Cross(const Vec3& p, const Vec3& q)
 {
-	return vec3{
+	return Vec3{
 		p.y * q.z - q.y * p.z,
 		p.z * q.x - q.z * p.x,
 		p.x * q.y - q.x * p.y
@@ -444,54 +493,44 @@ inline vec3 Cross(const vec3& p, const vec3& q)
 // Quaternion w+xi+yj+zk.
 ////
 
-class quat {
+class Quat {
 public:
 	float w;
 	float x;
 	float y;
 	float z;
 
-	quat()
+	Quat()
 		: w{1}, x{ 0 }, y{ 0 }, z{ 0 }
 	{}
 
-	quat(float w, float x, float y, float z)
+	Quat(float w, float x, float y, float z)
 		: w{ w }, x{ x }, y{ y }, z{ z }
 	{}
 
-	quat(float w, const vec3& v)
+	Quat(float w, const Vec3& v)
 		: w{ w }, x{ v.x }, y{ v.y }, z{ v.z }
 	{}
 
-	float real() const { return w; }
-	void real(float w) { this->w = w; }
-	vec3 imag() const { return vec3{ x, y, z }; }
-	void imag(const vec3& v) { x = v.x; y = v.y; z = v.z; }
-	vec3 rotate(const vec3& v)
-	{
-		// TODO: compare two methods.
-		auto tmp1 = 2.f * Dot(imag(), v) * imag();
-		auto tmp2 = (w * w - Dot(imag(), imag())) * v;
-		auto tmp3 = 2.f * w * Cross(imag(), v);
-		return (tmp1 + tmp2 + tmp3) / (x*x+y*y+z*z+w*w);
-		// return (((*this) * quat(v, 0)) * Inv(*this)).imag();
-	}
+	float Re() const { return w; }
+	void Re(float w) { this->w = w; }
+	Vec3 Im() const { return Vec3{ x, y, z }; }
+	void Im(const Vec3& v) { x = v.x; y = v.y; z = v.z; }
 
-	static quat AngleAxis(float angle, vec3 axis);
+	// Input axis should be a unit vector.
+	static Quat AngleAxis(float angle, Vec3 axis)
+	{
+		return Quat{ cos(angle * .5f),
+			axis * std::sinf(angle * .5f)};
+	}
 };
 
-inline quat quat::AngleAxis(float angle, vec3 axis)
-{
-	return quat{ cos(angle * .5f),
-		Normalize(axis) * std::sinf(angle * .5f)};
-}
-
-inline float Dot(const quat& p, const quat& q)
+inline float Dot(const Quat& p, const Quat& q)
 {
 	return p.x*q.x + p.y*q.y + p.z*q.z + p.w*q.w;
 }
 
-inline quat& operator+=(quat lhs, const quat& rhs)
+inline Quat& operator+=(Quat lhs, const Quat& rhs)
 {
 	lhs.x += rhs.x;
 	lhs.y += rhs.y;
@@ -500,12 +539,12 @@ inline quat& operator+=(quat lhs, const quat& rhs)
 	return lhs;
 }
 
-inline quat operator+(quat lhs, const quat& rhs)
+inline Quat operator+(Quat lhs, const Quat& rhs)
 {
 	return lhs += rhs;
 }
 
-inline quat& operator-=(quat lhs, const quat& rhs)
+inline Quat& operator-=(Quat lhs, const Quat& rhs)
 {
 	lhs.x -= rhs.x;
 	lhs.y -= rhs.y;
@@ -514,24 +553,24 @@ inline quat& operator-=(quat lhs, const quat& rhs)
 	return lhs;
 }
 
-inline quat operator-(quat lhs, const quat& rhs)
+inline Quat operator-(Quat lhs, const Quat& rhs)
 {
 	return lhs -= rhs;
 }
 
-inline quat operator*(const quat& p, float s)
+inline Quat operator*(const Quat& p, float s)
 {
-	return quat{p.w*s,p.x*s,p.y*s,p.z*s};
+	return Quat{p.w*s,p.x*s,p.y*s,p.z*s};
 }
 
-inline quat operator*(float s, const quat& p)
+inline Quat operator*(float s, const Quat& p)
 {
 	return p*s;
 }
 
-inline quat& operator*=(quat & lhs, const quat & rhs)
+inline Quat& operator*=(Quat & lhs, const Quat & rhs)
 {
-	const quat lhs_{ lhs };
+	const Quat lhs_{ lhs };
 	lhs.w = lhs_.w * rhs.w - lhs_.x * rhs.x - lhs_.y * rhs.y - lhs_.z * rhs.z;
 	lhs.x = lhs_.w * rhs.x + lhs_.x * rhs.w + lhs_.y * rhs.z - lhs_.z * rhs.y;
 	lhs.y = lhs_.w * rhs.y + lhs_.y * rhs.w + lhs_.z * rhs.x - lhs_.x * rhs.z;
@@ -539,12 +578,12 @@ inline quat& operator*=(quat & lhs, const quat & rhs)
 	return lhs;
 }
 
-inline quat operator*(quat lhs, const quat & rhs)
+inline Quat operator*(Quat lhs, const Quat & rhs)
 {
 	return lhs *= rhs;
 }
 
-inline quat& operator/=(quat& p, float s)
+inline Quat& operator/=(Quat& p, float s)
 {
 	p.x /= s;
 	p.y /= s;
@@ -553,20 +592,20 @@ inline quat& operator/=(quat& p, float s)
 	return p;
 }
 
-inline quat operator/(const quat& p, float s)
+inline Quat operator/(const Quat& p, float s)
 {
-	quat result{ p };
+	Quat result{ p };
 	return result /= s;;
 }
 
-inline quat operator/(float w, const quat& p)
+inline Quat operator/(float w, const Quat& p)
 {
-	return quat{w/p.x,w/p.y,w/p.z,w/p.w};
+	return Quat{w/p.x,w/p.y,w/p.z,w/p.w};
 }
 
-inline quat & operator/=(quat & lhs, const quat & rhs)
+inline Quat & operator/=(Quat & lhs, const Quat & rhs)
 {
-	const quat lhs_{ lhs };
+	const Quat lhs_{ lhs };
 
 	lhs.w = lhs_.w * rhs.w + lhs_.x * rhs.x + lhs_.y * rhs.y + lhs_.z * rhs.z;
 	lhs.x = lhs_.x * rhs.w - lhs_.w * rhs.x - lhs_.z * rhs.y + lhs_.y * rhs.z;
@@ -578,48 +617,436 @@ inline quat & operator/=(quat & lhs, const quat & rhs)
 	return lhs;
 }
 
-inline quat operator/(quat lhs, const quat & rhs)
+inline Quat operator/(Quat lhs, const Quat & rhs)
 {
 	return lhs /= rhs;
 }
 
-inline quat Conj(const quat& q)
+inline Quat Conj(const Quat& q)
 {
-	return quat{q.w, -q.x,-q.y,-q.z};
+	return Quat{q.w, -q.x,-q.y,-q.z};
 }
 
-inline quat Inv(const quat& q)
+inline Quat Inv(const Quat& q)
 {
 	return Conj(q) / Dot(q,q);
 }
 
-inline float Length(const quat& q)
+inline float Length(const Quat& q)
 {
 	return std::sqrtf(Dot(q,q));
 }
 
-inline quat Normalize(quat q)
+inline Quat Normalize(Quat q)
 {
 	return q / Length(q);
 }
 
-inline mat3 quat2mat3(quat q)
+// Input Quat should be a unit Quaternion.
+inline Vec3 QuatRotate(const Quat& q, const Vec3& v)
 {
-	q = Normalize(q);
+	return 2.f*Dot(q.Im(), v) * q.Im()
+		+ (q.w*q.w - Dot(q.Im(), q.Im())) * v
+		+ 2.f*q.w * Cross(q.Im(), v);
+}
 
+// Input q should be normalized first.
+inline Mat3 Quat2Mat3(const Quat& q)
+{
 	float xx = q.x*q.x, yy = q.y*q.y, zz = q.z*q.z, xz = q.x*q.z, \
 		xy = q.x*q.y, yz = q.y*q.z, wx = q.w*q.x, wy = q.w*q.y, wz = q.w*q.z;
 
-	return mat3{
-		{ 1.f - 2.f * (yy + zz), 2.f * (xy - wz), 2.f * (xz + wy)},
-		{ 2.f * (xy + wz), 1.f - 2.f * (xx + zz), 2.f * (yz - wx)},
-		{ 2.f * (xz - wy), 2.f * (yz + wx), 1.f - 2.f * (xx + yy)}}.T();
+	return Mat3{
+		{ 1.f - 2.f * (yy + zz), 2.f * (xy + wz), 2.f * (xz - wy)},
+		{ 2.f * (xy - wz), 1.f - 2.f * (xx + zz), 2.f * (yz + wx)},
+		{ 2.f * (xz + wy), 2.f * (yz - wx), 1.f - 2.f * (xx + yy)}};
 }
 
-inline float* begin(quat& q) { return &(q.w); }
-inline const float* begin(const quat& q) { return &(q.w); }
-inline float* end(quat& q) {return begin(q) + 4; }
-inline const float* end(const quat& q) {return begin(q) + 4; }
+inline float* begin(Quat& q) { return &(q.w); }
+inline const float* begin(const Quat& q) { return &(q.w); }
+inline float* end(Quat& q) {return begin(q) + 4; }
+inline const float* end(const Quat& q) {return begin(q) + 4; }
+
+// PCG, A Family of Better Random Number Generators.
+class PCG {
+public:
+
+	using result_type = uint32_t;
+
+	PCG(uint64_t seed)
+		: state_{ seed }
+	{}
+
+	static uint32_t max() { return std::numeric_limits<uint32_t>::max(); }
+	static uint32_t min() { return std::numeric_limits<uint32_t>::min(); }
+
+	uint32_t operator()()
+	{
+		// Advance state.
+		state_ = state_ * 6364136223846793005ULL + 1442695040888963407ULL;
+
+		// PCG randomize.
+		auto xorshift = static_cast<uint32_t>(
+			(state_ ^ (state_ >> 18u)) >> 27u);
+
+		auto shift = state_ >> 59u;
+		return (xorshift >> shift) | (xorshift << ((-shift) & 31));
+	}
+
+private:
+	uint64_t state_;
+};
+
+////
+// Utility functions.
+////
+
+template<typename ValType, int NumRows>
+Mat<ValType, NumRows, NumRows> Diagonal(const Mat<ValType, NumRows, 1>& v)
+{
+	Mat<ValType, NumRows, NumRows> result{};
+	for (int i = 0; i < NumRows; ++i)
+			result[i][i] = v[i];
+	return result;
+}
+
+template<typename ValType, int NumRows>
+std::enable_if_t<(NumRows > 2), Mat<ValType, 2, 1>>
+as_vec2(const Mat<ValType, NumRows, 1>& v)
+{
+	return {v.x, v.y};
+}
+
+template<typename ValType, int NumRows>
+std::enable_if_t<(NumRows > 3), Mat<ValType, 3, 1>>
+as_vec3(const Mat<ValType, NumRows, 1>& v)
+{
+	return {v.x, v.y, v.z};
+}
+
+template<typename ValType, int NumRows>
+std::enable_if_t<(NumRows > 2), Mat<ValType, 2, 2>>
+as_mat2(const Mat<ValType, NumRows, NumRows>& m)
+{
+	return {as_vec2(m[0]), as_vec2(m[1])};
+}
+
+template<typename ValType, int NumRows>
+std::enable_if_t<(NumRows > 3), Mat<ValType, 3, 3>>
+as_mat3(const Mat<ValType, NumRows, NumRows>& m)
+{
+	return {as_vec3(m[0]), as_vec3(m[1]), as_vec3(m[2])};
+}
+
+float Deg2Rad(const float deg)
+{
+	return deg * pi / 180.f;
+}
+
+template<typename T>
+inline T Lerp(T v0, T v1, float t)
+{
+	return v0+(v1-v0)*t;
+}
+
+inline float Clamp(float s, float min, float max)
+{
+	return s>max?max:(s<min?min:s);
+}
+
+template<typename ValType, int NumRows, int NumCols>
+auto ComponentWiseMin(
+	Mat<ValType, NumRows, NumCols> v1,
+	const Mat<ValType, NumRows, NumCols>& v2)
+{
+	auto v1_iter = begin(v1);
+	auto v2_iter = begin(v2);
+	while (v1_iter!=end(v1)) {
+		*v1_iter = std::min(*v1_iter,*v2_iter);
+		v1_iter++;
+		v2_iter++;
+	}
+	return v1;
+}
+
+template<typename ValType, int NumRows, int NumCols>
+auto ComponentWiseMax(
+	Mat<ValType, NumRows, NumCols> v1,
+	const Mat<ValType, NumRows, NumCols>& v2)
+{
+	auto v1_iter = begin(v1);
+	auto v2_iter = begin(v2);
+	while (v1_iter!=end(v1)) {
+		*v1_iter = std::max(*v1_iter,*v2_iter);
+		v1_iter++;
+		v2_iter++;
+	}
+	return v1;
+}
+
+template<typename ValType1, typename ValType2, int NumRows, int NumCols>
+bool ComponentWiseLessEqual(
+	const Mat<ValType1, NumRows, NumCols>& lhs,
+	const Mat<ValType2, NumRows, NumCols>& rhs)
+{
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter != end(lhs))
+		if (*lhs_iter > *rhs_iter)
+			return false;
+	return true;
+}
+
+template<typename ValType1, typename ValType2, int NumRows, int NumCols>
+bool ComponentWiseLessThan(
+	const Mat<ValType1, NumRows, NumCols>& lhs,
+	const Mat<ValType2, NumRows, NumCols>& rhs)
+{
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter != end(lhs))
+		if (*lhs_iter >= *rhs_iter)
+			return false;
+	return true;
+}
+
+template<typename ValType1, typename ValType2, int NumRows, int NumCols>
+bool ComponentWiseGreaterEqual(
+	const Mat<ValType1, NumRows, NumCols>& lhs,
+	const Mat<ValType2, NumRows, NumCols>& rhs)
+{
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter != end(lhs))
+		if (*lhs_iter < *rhs_iter)
+			return false;
+	return true;
+}
+
+template<typename ValType1, typename ValType2, int NumRows, int NumCols>
+bool ComponentWiseGreaterThan(
+	const Mat<ValType1, NumRows, NumCols>& lhs,
+	const Mat<ValType2, NumRows, NumCols>& rhs)
+{
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter != end(lhs))
+		if (*lhs_iter <= *rhs_iter)
+			return false;
+	return true;
+}
+
+inline Vec3 UnProject(
+	const Vec3& winpos, 
+	const Mat4& view, 
+	const Mat4& proj, 
+	const Vec4& viewport)
+{
+	Vec4 tmp{
+		(winpos.x - viewport.x) / viewport.z * 2.f - 1.f,
+		(winpos.y - viewport.y) / viewport.w * 2.f - 1.f,
+		winpos.z * 2.f - 1.f,
+		1.f };
+
+	Vec4 obj = Dot(Inv(Dot(proj, view)), tmp);
+	obj /= obj.w;
+	return as_vec3(obj);
+}
+
+inline Mat2 RotationTransform(float angle)
+{
+	return Mat2{
+		{std::cosf(angle), std::sinf(angle)}, 
+		{-std::sinf(angle), std::cosf(angle)}};
+}
+
+// Input axis should be a unit vector.
+inline Mat3 RotationTransform(float angle, Vec3 axis)
+{
+	float cosw = std::cosf(angle), sin_w = std::sinf(angle);
+	float _1cosw = 1-cosw;
+	float x = axis.x, y = axis.y, z = axis.z;
+	float zz = z*z, xx = x*x, yy = y*y, yz = y*z, xz = x*z, xy = x*y;
+	float x_sin_w = x*sin_w, y_sin_w = y*sin_w, z_sin_w = z*sin_w;
+	float xz_1cosw = xz*_1cosw;
+	float xy_1cosw = xy*_1cosw;
+	float yz_1cosw = yz*_1cosw;
+	return Mat3{
+		{ xx*_1cosw+cosw, xy_1cosw+z*sin_w, xz_1cosw-y_sin_w},
+		{ xy_1cosw-z_sin_w, yy*_1cosw+cosw, yz_1cosw+x_sin_w},
+		{ xz_1cosw+y_sin_w, yz_1cosw-x_sin_w, zz*_1cosw+cosw}};
+}
+
+template<int NumRows>
+std::enable_if_t<NumRows==2||NumRows==3, Mat<float, NumRows+1,NumRows+1>>
+AffineTransform(
+	const Mat<float, NumRows, NumRows>& basis,
+	const Mat<float, NumRows, 1>& translation)
+{
+	Mat<float, NumRows+1,NumRows+1> result{};
+	for (int col = 0; col < NumRows; ++col)
+		for (int row = 0; row < NumRows; ++row)
+			result[col][row] = basis[col][row];
+	for (int row = 0; row < NumRows; ++row)
+		result[NumRows][row] = translation[row];
+	result[NumRows][NumRows] = 1;
+	return result;
+}
+
+// Solve for coordinates under new basis and origin.
+inline Mat4 ViewTransform(
+	Mat3 view_base, const Vec3& view_point)
+{
+	view_base.T();
+	return AffineTransform(view_base, Dot(view_base, -1.f*view_point));
+}
+
+inline Mat4 LookAt(const Vec3 eye, const Vec3 spot, const Vec3 up)
+{
+	const Vec3 forward_ = Normalize(spot - eye);
+	const Vec3 s = Normalize(Cross(forward_, up));
+	const Vec3 up_ = Normalize(Cross(s, forward_));
+
+	 return ViewTransform(Mat3{s,forward_,up_}, eye);
+}
+
+inline Mat4 ProjectiveTransform(
+	float fovy, float aspect, float znear, float zfar)
+{
+	float tan_half_fovy = std::tanf(fovy / 2.f);
+	float tan_half_fovx = aspect * tan_half_fovy;
+
+	Mat4 tmp{};
+	tmp[0][0] = 1.f / (tan_half_fovx);
+	tmp[1][1] = 1.f / (tan_half_fovy);
+	tmp[2][2] = -(zfar + znear) / (zfar - znear);
+	tmp[2][3] = -1.f;
+	tmp[3][2] = -(2.f * zfar * znear) / (zfar - znear);
+	return tmp;
+}
+
+inline Mat4 Orthographic(
+	float left, float right, float bottom, float top, 
+	float near_plane, float far_plane)
+{
+	auto tmp = Mat4::Eye();
+	tmp[0][0] = 2.f / (right - left);
+	tmp[1][1] = 2.f / (top - bottom);
+	tmp[2][2] = -2.f / (far_plane - near_plane);
+	tmp[3][0] = -(right + left) / (right - left);
+	tmp[3][1] = -(top + bottom) / (top - bottom);
+	tmp[3][2] = -(far_plane + near_plane) / (far_plane - near_plane);
+	tmp[3][3] = 1;
+	return tmp;
+}
+
+////
+// Ray tracing.
+////
+
+class Ray {
+public:
+	Vec3 o;
+	Vec3 d;
+
+	// Hit point: o+s*d.
+	mutable float s;
+};
+
+template<typename VecType>
+class Box {
+public:
+	VecType o;
+	VecType size;
+
+	Box() = default;
+
+	Box(VecType o, VecType size)
+		:o{o},size{size}
+	{}
+
+	VecType Sup() { return o+.5f*size; }
+	VecType Inf() { return o-.5f*size; }
+
+	static Box<VecType> BoundingBox(const std::vector<Box<VecType>>& boxes)
+	{
+		if (boxes.size() == 0)
+			return Box<VecType>{};
+
+		VecType inf = boxes[0].Inf(), sup = boxes[0].Sup();
+		for (int i = 1; i < boxes.size(); ++i) {
+			inf = ComponentWiseMin(inf,boxes[i].Inf());
+			sup = ComponentWiseMax(sup,boxes[i].Sup());
+		}
+		auto o = (inf+sup)*.5f;
+		auto size = sup - inf;
+		return Box<VecType>{o, size};
+	}
+};
+
+using Box2D = Box<Vec2>;
+using Box3D = Box<Vec3>;
+
+template<typename VecType>
+bool Intersect(
+	const Box<VecType>& box1, 
+	const Box<VecType>& box2, 
+	Box<VecType>& result)
+{
+	auto inf = ComponentWiseMax(box1.Inf(),box2.Inf());
+	auto sup = ComponentWiseMin(box1.Sup(),box2.Sup());
+	if (ComponentWiseLessEqual(inf,sup)) {
+		result = Box<VecType>::BoundingBox({inf, sup});
+		return true;
+	}
+	else
+		return false;
+}
+
+template<typename VecType>
+auto Union(
+	const Box<VecType>& box1, 
+	const Box<VecType>& box2)
+{
+	if (box1.size() == VecType{})
+		return box2;
+	if (box2.size() == VecType{})
+		return box1;
+	auto inf = ComponentWiseMin(box1.Inf(),box2.Inf());
+	auto sup = ComponentWiseMax(box1.Sup(),box2.Sup());
+	return Box<VecType>::BoundingBox({inf, sup});
+}
+
+class Sphere {
+public:
+	Vec3 o;
+	float r;
+};
+
+inline bool Hit(const Sphere &sphere, const Ray &ray)
+{
+	auto b = 2.f*Dot(ray.o - sphere.o, ray.d);
+	auto c = Dot(ray.o - sphere.o, ray.o - sphere.o) - sphere.r * sphere.r;
+	auto delta = b * b - 4 * c;
+	if (delta <= eps)
+		return false;
+
+	delta = std::sqrtf(delta);
+	auto t1 = std::min(.5f*(-b - delta), .5f*(-b + delta));
+	auto t2 = std::max(.5f*(-b - delta), .5f*(-b + delta));
+
+	if (t2 < eps)
+		return false;
+
+	if (t1 >= eps)
+		ray.s = t1;
+	else
+		ray.s = t2;
+
+	return true;
+}
+
+
 
 }
 
