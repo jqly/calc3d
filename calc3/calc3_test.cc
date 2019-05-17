@@ -30,21 +30,21 @@ TEST_CASE("test ops") {
 	Mat3 np_add_m1_m2{ {6, 9, 5},
 	{13, 5, 7},
 	{12, 15, 11} };
-	REQUIRE(ValueSum(add_m1_m2-np_add_m1_m2) < 1e-5f);
+	REQUIRE(ValueSum(Abs(add_m1_m2-np_add_m1_m2)) < 1e-5f);
 
 	auto dot_m1_v1 = Dot(m1, Normalize(v1));
 	Vec3 np_dot_m1_v1{ 4.80056815, 6.27766604, 7.75476393 };
-	REQUIRE(ValueSum(dot_m1_v1 - np_dot_m1_v1) < 1e-5f);
+	REQUIRE(ValueSum(Abs(dot_m1_v1 - np_dot_m1_v1)) < 1e-5f);
 
 	auto div_v1 = (Dot(m1, Normalize(v1)) * v2) * (1.f / v1);
 	Vec3 np_div_v1{ 2.40028,3.5872,23.2642918 };
-	REQUIRE(ValueSum(div_v1 - np_div_v1) < 1e-4f);
+	REQUIRE(ValueSum(Abs(div_v1 - np_div_v1)) < 1e-4f);
 
 	auto res = v2 * (Dot((m1 + m2), (Dot(m1, Normalize(v1)) + Dot(m2, Normalize(v2)) * v2)) * (1.f / v1));
 
 	Vec3 np_res{ 385.47759403,  366.73324777, 1602.88722063 };
 
-	REQUIRE(ValueSum(res - np_res) < .005f);
+	REQUIRE(ValueSum(Abs(res - np_res)) < .005f);
 
 }
 
@@ -58,7 +58,7 @@ TEST_CASE("test Inv, T, and Cross") {
 					{-0.43258395,  0.35703625,  0.43362349, -0.22591418},
 					{0.11042918, -0.24417286,  0.37769743, -0.15665612},
 					{0.89587593, -0.09681305, -0.62826143,  0.35261243} };
-	REQUIRE(ValueSum(m_inv - np_m_inv) < .005f);
+	REQUIRE(ValueSum(Abs(m_inv - np_m_inv)) < .005f);
 
 	auto m3_t_inv = Inv(Mat3{ {0.317421  ,  1.66346629,  1.06949749},
 	{-1.3187909 , -0.71138327, -0.47630731},
@@ -68,16 +68,16 @@ TEST_CASE("test Inv, T, and Cross") {
 	   {-0.83868346,  0.42485522, -0.41189119},
 	{-0.01187842, -0.47487736,  0.74213633} };
 
-	REQUIRE(ValueSum(m3_t_inv - np_m3_t_inv) < .005f);
+	REQUIRE(ValueSum(Abs(m3_t_inv - np_m3_t_inv)) < .005f);
 
 	auto m2_t_inv = Inv(Mat2{ {-0.79521166, -1.64446396},{-0.70630628, -0.54255584} }.T());
 	Mat2 np_m2_t_inv{ {0.7431778 , -0.96747857}, {-2.2525407 ,  1.08925867} };
-	REQUIRE(ValueSum(m2_t_inv - np_m2_t_inv) < .005f);
+	REQUIRE(ValueSum(Abs(m2_t_inv - np_m2_t_inv)) < .005f);
 
     Vec3 p{1,2,3}, q{4,5,6};
     Vec3 cross_pq = Cross(p,q);
     Vec3 np_cross_pq{-3,6,-3};
-    REQUIRE(ValueSum(cross_pq-np_cross_pq) < 1e-4);
+    REQUIRE(ValueSum(Abs(cross_pq-np_cross_pq)) < 1e-4);
 }
 
 TEST_CASE("test Quat") {
@@ -91,7 +91,7 @@ TEST_CASE("test Quat") {
 	    {11./15., 2./3., 2./15.}
 	};
 	
-	REQUIRE(ValueSum(qrot - Quat2Mat3(Normalize(q))) < .005f);
+	REQUIRE(ValueSum(Abs(qrot - Quat2Mat3(Normalize(q)))) < .005f);
 
 	Quat nq = Quat::AngleAxis(
 		2.f*std::acosf(1.f/std::sqrtf(30.f)), 
@@ -129,29 +129,43 @@ TEST_CASE("test transformations") {
 	Mat3 quat_rotated = Quat2Mat3(
 		Quat::AngleAxis(Deg2Rad(30), Normalize(Vec3({1.f,3.f,5.f}))));
 
-	REQUIRE(ValueSum(rotated - ma_rotated) < .005f);
-	REQUIRE(ValueSum(rotated - quat_rotated) < .005f);
+	REQUIRE(ValueSum(Abs(rotated - ma_rotated)) < .005f);
+	REQUIRE(ValueSum(Abs(rotated - quat_rotated)) < .005f);
 
 	Mat4 lookat = LookAt({0.044106,-0.003575,6.567765}, {0.044106,-0.003575,0.066791}, {0.000000,1.000000,0.000000});
 	Mat4 xy_lookat = Mat4{{1.000000,-0.000000,0.000000,-0.044106},
 		 {0.000000,1.000000,0.000000,0.003575},
 		 {-0.000000,-0.000000,1.000000,-6.567765},
 		 {0.000000,0.000000,0.000000,1.000000}}.T();
-	REQUIRE(ValueSum(xy_lookat - lookat) < .005f);
+	//for (auto &it: proj)
+	//	std::cout << it << ",";
+	//std::cout << "\n";
+	REQUIRE(ValueSum(Abs(xy_lookat - lookat)) < .005f);
 
 	Mat4 proj = ProjectiveTransform(1.0472, 1, 3.25049, 9.75146);
 	Mat4 xy_proj = Mat4{{1.732051,0.000000,0.000000,0.000000},
 	{0.000000,1.732051,0.000000,0.000000},
 	{0.000000,0.000000,-2.000000,-9.751461},
-	{0.000000,0.000000,-1.000000,0.000000}};
-
-	REQUIRE(ValueSum(proj - xy_proj) < .005f); 
+	{0.000000,0.000000,-1.000000,0.000000}}.T();
+	REQUIRE(ValueSum(Abs(proj - xy_proj)) < .001f); 
 
 	Mat4 ortho = OrthographicTransform(-2.62256,2.62256,-3.08495,3.08495,0,6.50033);
-	Mat4 xy_ortho{{0.381306,0.000000,0.000000,-0.000000},
+	Mat4 xy_ortho = Mat4{{0.381306,0.000000,0.000000,-0.000000},
 	{0.000000,0.324154,0.000000,-0.000000},
 	{0.000000,0.000000,-0.307676,-1.000000},
-	{0.000000,0.000000,0.000000,1.000000}};
-	REQUIRE(ValueSum(ortho - xy_ortho) < .005f); 
+	{0.000000,0.000000,0.000000,1.000000}}.T();
+	REQUIRE(ValueSum(Abs(ortho - xy_ortho)) < .005f); 
 
+}
+
+TEST_CASE("test misc") {
+	float raw[] = {
+		1,2,3,4,
+		5,6,7,8,
+		9,10,11,12,
+		13,14,15,16};
+	auto m4 = Mat4::FromMemoryRowMajor(raw);
+	for (auto &it: m4)
+		std::cout << it << ",";
+	std::cout << "\n";
 }

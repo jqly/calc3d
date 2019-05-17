@@ -79,6 +79,12 @@ public:
 using Vec4 = Mat<float, 4, 1>;
 using iVec4 = Mat<int, 4, 1>;
 
+template<typename ValType, int NumRows>
+void MemCopy(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+
+template<typename ValType, int NumRows>
+void MemCopyRowMajor(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+
 template<typename ValType>
 class Mat<ValType, 2, 2> {
 public:
@@ -101,6 +107,22 @@ public:
 		for (int i = 0; i < 2; ++i)
 			m[i][i] = 1;
 		return m;
+	}
+
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 2, 2> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
+
+	static auto FromMemoryRowMajor(const ValType* p)
+	{
+		Mat<ValType, 2, 2> result;
+		for (int row = 0; row < NumRows; ++row)
+			for (int col = 0; col < NumRows; ++col)
+				result[col][row] = p[row*NumRows+col];
+		return result;
 	}
 };
 
@@ -132,6 +154,22 @@ public:
 		for (int i = 0; i < 3; ++i)
 			m[i][i] = 1;
 		return m;
+	}
+
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 3, 3> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
+
+	static auto FromMemoryRowMajor(const ValType* p)
+	{
+		Mat<ValType, 3, 3> result;
+		for (int row = 0; row < 3; ++row)
+			for (int col = 0; col < 3; ++col)
+				result[col][row] = p[row*3+col];
+		return result;
 	}
 };
 
@@ -167,6 +205,22 @@ public:
 		for (int i = 0; i < 4; ++i)
 			m[i][i] = 1;
 		return m;
+	}
+
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 4, 4> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
+
+	static auto FromMemoryRowMajor(const ValType* p)
+	{
+		Mat<ValType, 4, 4> result;
+		for (int row = 0; row < 4; ++row)
+			for (int col = 0; col < 4; ++col)
+				result[col][row] = p[row*4+col];
+		return result;
 	}
 };
 
@@ -308,6 +362,22 @@ ElementwiseOpsForMat(+);
 ElementwiseOpsForMat(-);
 ElementwiseOpsForMat(*);
 ElementwiseOpsForMat(/);
+
+template<typename ValType, int NumCols, int NumRows>
+auto Abs(Mat<ValType, NumCols, NumRows> a)
+{
+	for (auto* p = begin(a); p != end(a); ++p)
+		*p = std::abs(*p);
+	return a;
+}
+
+template<typename ValType, int NumCols, int NumRows>
+auto operator-(Mat<ValType, NumCols, NumRows> a)
+{
+	for (auto* p = begin(a); p != end(a); ++p)
+		*p = -*p;
+	return a;
+}
 
 ////
 // Matrix operations.
@@ -901,7 +971,7 @@ inline Mat4 ViewTransform(
 	Mat3 view_base, const Vec3& view_point)
 {
 	view_base.T();
-	return AffineTransform(view_base, Dot(view_base, -1.f*view_point));
+	return AffineTransform(view_base, Dot(view_base, -view_point));
 }
 
 inline Mat4 LookAt(const Vec3 eye, const Vec3 spot, const Vec3 up)
@@ -910,7 +980,7 @@ inline Mat4 LookAt(const Vec3 eye, const Vec3 spot, const Vec3 up)
 	const Vec3 s = Normalize(Cross(forward_, up));
 	const Vec3 up_ = Normalize(Cross(s, forward_));
 
-	 return ViewTransform(Mat3{s,forward_,up_}, eye);
+	 return ViewTransform(Mat3{s,up_,-forward_}, eye);
 }
 
 inline Mat4 ProjectiveTransform(
