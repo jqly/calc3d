@@ -12,8 +12,7 @@
 #include <numeric>
 #include <algorithm>
 #include <vector>
-
-// TODO: vector emplace_back(x,y,z) cannot work.
+#include <cstring>
 
 namespace c3d
 {
@@ -32,6 +31,12 @@ constexpr float eps = 16 * std::numeric_limits<float>::epsilon();
 template<typename ValType, int NumRows, int NumCols>
 class Mat;
 
+template<typename ValType, int NumRows>
+void MemCopy(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+
+template<typename ValType, int NumRows>
+void MemCopyRowMajor(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+
 template<typename ValType>
 class Mat<ValType, 2, 1> {
 public:
@@ -41,6 +46,13 @@ public:
 
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
+
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 2, 1> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
 };
 
 using Vec2 = Mat<float, 2, 1>;
@@ -57,6 +69,12 @@ public:
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
 
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 3, 1> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
 };
 
 using Vec3 = Mat<float, 3, 1>;
@@ -74,16 +92,16 @@ public:
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
 
+	static auto FromMemory(const ValType* p)
+	{
+		Mat<ValType, 4, 1> result;
+		std::memcpy(&result, p, sizeof(result));
+		return result;
+	}
 };
 
 using Vec4 = Mat<float, 4, 1>;
 using iVec4 = Mat<int, 4, 1>;
-
-template<typename ValType, int NumRows>
-void MemCopy(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
-
-template<typename ValType, int NumRows>
-void MemCopyRowMajor(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
 
 template<typename ValType>
 class Mat<ValType, 2, 2> {
@@ -279,8 +297,8 @@ const ValType* end(const Mat<ValType, NumRows, NumCols>& a)
 #define ElementwiseOpsForMat(Op) \
 template<typename ValType1, typename ValType2, int NumRows, int NumCols> \
 auto operator##Op##=( \
-Mat<ValType1, NumRows, NumCols>& lhs, \
-const Mat<ValType2, NumRows, NumCols>& rhs) \
+	Mat<ValType1, NumRows, NumCols>& lhs, \
+	const Mat<ValType2, NumRows, NumCols>& rhs) \
 { \
 for (int i = 0; i < NumRows * NumCols; ++i) \
 	* (begin(lhs) + i) Op##= *(begin(rhs) + i); \
@@ -289,7 +307,8 @@ return lhs; \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
 std::enable_if_t< \
-	std::is_same_v<float, ScalarType> || std::is_same_v<int, ScalarType>, \
+	std::is_same<float, ScalarType>::value \
+	|| std::is_same<int, ScalarType>::value, \
 	Mat<ValType, NumRows, NumCols>> \
 operator##Op##=(Mat<ValType, NumRows, NumCols> & lhs, const ScalarType & rhs) \
 { \
@@ -300,8 +319,8 @@ return lhs; \
 \
 template<typename ValType1, typename ValType2, int NumRows, int NumCols> \
 auto operator##Op( \
-const Mat<ValType1, NumRows, NumCols> & lhs, \
-const Mat<ValType2, NumRows, NumCols> & rhs) \
+	const Mat<ValType1, NumRows, NumCols> & lhs, \
+	const Mat<ValType2, NumRows, NumCols> & rhs) \
 { \
 Mat<decltype(ValType1() + ValType2()), NumRows, NumCols> tmp{}; \
 for (int i = 0; i < NumRows * NumCols; ++i) \
@@ -311,8 +330,9 @@ return tmp; \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
 std::enable_if_t< \
-std::is_same_v<float, ScalarType> || std::is_same_v<int, ScalarType>, \
-Mat<decltype(ValType() + ScalarType()), NumRows, NumCols>> \
+	std::is_same<float, ScalarType>::value \
+	|| std::is_same<int, ScalarType>::value, \
+	Mat<decltype(ValType() + ScalarType()), NumRows, NumCols>> \
 operator##Op( \
 const Mat<ValType, NumRows, NumCols> & lhs, \
 const ScalarType & rhs) \
@@ -325,8 +345,9 @@ return tmp; \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
 std::enable_if_t< \
-std::is_same_v<float, ScalarType> || std::is_same_v<int, ScalarType>, \
-Mat<decltype(ValType() * ScalarType()), NumRows, NumCols>> \
+	std::is_same<float, ScalarType>::value \
+	|| std::is_same<int, ScalarType>::value, \
+	Mat<decltype(ValType() * ScalarType()), NumRows, NumCols>> \
 operator##Op( \
 const ScalarType & lhs, \
 const Mat<ValType, NumRows, NumCols> & rhs) \
@@ -784,31 +805,31 @@ Mat<ValType, NumRows, NumRows> Diagonal(const Mat<ValType, NumRows, 1>& v)
 }
 
 template<typename ValType, int NumRows>
-std::enable_if_t<(NumRows > 2), Mat<ValType, 2, 1>>
-as_vec2(const Mat<ValType, NumRows, 1>& v)
+typename std::enable_if<(NumRows > 2), Mat<ValType, 2, 1>>::type
+AsVec2(const Mat<ValType, NumRows, 1>& v)
 {
 	return {v.x, v.y};
 }
 
 template<typename ValType, int NumRows>
-std::enable_if_t<(NumRows > 3), Mat<ValType, 3, 1>>
-as_vec3(const Mat<ValType, NumRows, 1>& v)
+typename std::enable_if<(NumRows > 3), Mat<ValType, 3, 1>>::type
+AsVec3(const Mat<ValType, NumRows, 1>& v)
 {
 	return {v.x, v.y, v.z};
 }
 
 template<typename ValType, int NumRows>
-std::enable_if_t<(NumRows > 2), Mat<ValType, 2, 2>>
-as_mat2(const Mat<ValType, NumRows, NumRows>& m)
+typename std::enable_if<(NumRows > 2), Mat<ValType, 2, 2>>::type
+AsMat2(const Mat<ValType, NumRows, NumRows>& m)
 {
-	return {as_vec2(m[0]), as_vec2(m[1])};
+	return {AsVec2(m[0]), AsVec2(m[1])};
 }
 
 template<typename ValType, int NumRows>
-std::enable_if_t<(NumRows > 3), Mat<ValType, 3, 3>>
-as_mat3(const Mat<ValType, NumRows, NumRows>& m)
+typename std::enable_if<(NumRows > 3), Mat<ValType, 3, 3>>::type
+AsMat3(const Mat<ValType, NumRows, NumRows>& m)
 {
-	return {as_vec3(m[0]), as_vec3(m[1]), as_vec3(m[2])};
+	return {AsVec3(m[0]), AsVec3(m[1]), AsVec3(m[2])};
 }
 
 inline float Deg2Rad(const float deg)
@@ -923,7 +944,7 @@ inline Vec3 UnProject(
 
 	Vec4 obj = Dot(Inv(Dot(proj, view)), tmp);
 	obj /= obj.w;
-	return as_vec3(obj);
+	return AsVec3(obj);
 }
 
 inline Mat2 RotationTransform(float angle)

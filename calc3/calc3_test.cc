@@ -137,9 +137,6 @@ TEST_CASE("test transformations") {
 		 {0.000000,1.000000,0.000000,0.003575},
 		 {-0.000000,-0.000000,1.000000,-6.567765},
 		 {0.000000,0.000000,0.000000,1.000000}}.T();
-	//for (auto &it: proj)
-	//	std::cout << it << ",";
-	//std::cout << "\n";
 	REQUIRE(ValueSum(Abs(xy_lookat - lookat)) < .005f);
 
 	Mat4 proj = ProjectiveTransform(1.0472, 1, 3.25049, 9.75146);
@@ -159,13 +156,13 @@ TEST_CASE("test transformations") {
 }
 
 TEST_CASE("test misc") {
-	float raw[] = {
-		1,2,3,4,
-		5,6,7,8,
-		9,10,11,12,
-		13,14,15,16};
-	auto m4 = Mat4::FromMemoryRowMajor(raw);
-	for (auto &it: m4)
-		std::cout << it << ",";
-	std::cout << "\n";
+	float raw_row_major[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+	float raw_column_major[] = {1,5,9,13,2,6,10,14,3,7,11,15,4,8,12,16};
+	auto m1 = Mat4::FromMemoryRowMajor(raw_row_major);
+	auto m2 = Mat4::FromMemory(raw_column_major);
+	Mat4 m3{{1,5,9,13},{2,6,10,14},{3,7,11,15},{4,8,12,16}};
+	
+	REQUIRE( std::memcmp(begin(m1),begin(m2), sizeof(float)*16) == 0 );
+	REQUIRE( std::memcmp(begin(m1),begin(m3), sizeof(float)*16) == 0 );
+
 }
