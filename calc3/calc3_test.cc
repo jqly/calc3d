@@ -147,7 +147,7 @@ TEST_CASE("test transformations") {
 
 	REQUIRE(ValueSum(proj - xy_proj) < .005f); 
 
-	Mat4 ortho = Orthographic(-2.62256,2.62256,-3.08495,3.08495,0,6.50033);
+	Mat4 ortho = OrthographicTransform(-2.62256,2.62256,-3.08495,3.08495,0,6.50033);
 	Mat4 xy_ortho{{0.381306,0.000000,0.000000,-0.000000},
 	{0.000000,0.324154,0.000000,-0.000000},
 	{0.000000,0.000000,-0.307676,-1.000000},

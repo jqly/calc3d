@@ -11,6 +11,9 @@
 #include <cmath>
 #include <numeric>
 #include <algorithm>
+#include <vector>
+
+// TODO: vector emplace_back(x,y,z) cannot work.
 
 namespace c3d
 {
@@ -738,7 +741,7 @@ as_mat3(const Mat<ValType, NumRows, NumRows>& m)
 	return {as_vec3(m[0]), as_vec3(m[1]), as_vec3(m[2])};
 }
 
-float Deg2Rad(const float deg)
+inline float Deg2Rad(const float deg)
 {
 	return deg * pi / 180.f;
 }
@@ -925,7 +928,7 @@ inline Mat4 ProjectiveTransform(
 	return tmp;
 }
 
-inline Mat4 Orthographic(
+inline Mat4 OrthographicTransform(
 	float left, float right, float bottom, float top, 
 	float near_plane, float far_plane)
 {
@@ -970,7 +973,7 @@ public:
 
 	static Box<VecType> BoundingBox(const std::vector<Box<VecType>>& boxes)
 	{
-		if (boxes.size() == 0)
+		if (boxes.size() == VecType{})
 			return Box<VecType>{};
 
 		VecType inf = boxes[0].Inf(), sup = boxes[0].Sup();
