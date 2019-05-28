@@ -3,7 +3,7 @@
 
 #include "calc3.h"
 
-using namespace c3d;
+using namespace calc;
 
 TEST_CASE("test vec sizes") {
 	static_assert(std::is_pod_v<Vec2>, "");
@@ -40,7 +40,9 @@ TEST_CASE("test ops") {
 	Vec3 np_div_v1{ 2.40028,3.5872,23.2642918 };
 	REQUIRE(ValueSum(Abs(div_v1 - np_div_v1)) < 1e-4f);
 
-	auto res = v2 * (Dot((m1 + m2), (Dot(m1, Normalize(v1)) + Dot(m2, Normalize(v2)) * v2)) * (1.f / v1));
+	auto res = v2 * (Dot(
+		(m1 + m2), 
+		(Dot(m1, Normalize(v1)) + Dot(m2, Normalize(v2)) * v2)) * (1.f / v1));
 
 	Vec3 np_res{ 385.47759403,  366.73324777, 1602.88722063 };
 
@@ -70,7 +72,8 @@ TEST_CASE("test Inv, T, and Cross") {
 
 	REQUIRE(ValueSum(Abs(m3_t_inv - np_m3_t_inv)) < .005f);
 
-	auto m2_t_inv = Inv(Mat2{ {-0.79521166, -1.64446396},{-0.70630628, -0.54255584} }.T());
+	auto m2_t_inv = Inv(
+		Mat2{ {-0.79521166, -1.64446396},{-0.70630628, -0.54255584} }.T());
 	Mat2 np_m2_t_inv{ {0.7431778 , -0.96747857}, {-2.2525407 ,  1.08925867} };
 	REQUIRE(ValueSum(Abs(m2_t_inv - np_m2_t_inv)) < .005f);
 
@@ -124,15 +127,19 @@ TEST_CASE("test transformations") {
 		{0.869853, 0.434061, -0.234407}, 
 		{-0.411094, 0.900476, 0.141933}, 
 		{0.272686, -0.0270977, 0.961722}};
-	Mat3 rotated = RotationTransform(Deg2Rad(30), Normalize(Vec3({1.f,3.f,5.f})));
-
+	Mat3 rotated = RotationTransform(
+		Deg2Rad(30), Normalize(Vec3({1.f,3.f,5.f})));
+	
 	Mat3 quat_rotated = Quat2Mat3(
 		Quat::AngleAxis(Deg2Rad(30), Normalize(Vec3({1.f,3.f,5.f}))));
 
 	REQUIRE(ValueSum(Abs(rotated - ma_rotated)) < .005f);
 	REQUIRE(ValueSum(Abs(rotated - quat_rotated)) < .005f);
 
-	Mat4 lookat = LookAt({0.044106,-0.003575,6.567765}, {0.044106,-0.003575,0.066791}, {0.000000,1.000000,0.000000});
+	Mat4 lookat = LookAt(
+		{0.044106,-0.003575,6.567765}, 
+		{0.044106,-0.003575,0.066791}, 
+		{0.000000,1.000000,0.000000});
 	Mat4 xy_lookat = Mat4{{1.000000,-0.000000,0.000000,-0.044106},
 		 {0.000000,1.000000,0.000000,0.003575},
 		 {-0.000000,-0.000000,1.000000,-6.567765},
@@ -146,7 +153,8 @@ TEST_CASE("test transformations") {
 	{0.000000,0.000000,-1.000000,0.000000}}.T();
 	REQUIRE(ValueSum(Abs(proj - xy_proj)) < .001f); 
 
-	Mat4 ortho = OrthographicTransform(-2.62256,2.62256,-3.08495,3.08495,0,6.50033);
+	Mat4 ortho = OrthographicTransform(
+		-2.62256,2.62256,-3.08495,3.08495,0,6.50033);
 	Mat4 xy_ortho = Mat4{{0.381306,0.000000,0.000000,-0.000000},
 	{0.000000,0.324154,0.000000,-0.000000},
 	{0.000000,0.000000,-0.307676,-1.000000},
@@ -155,14 +163,89 @@ TEST_CASE("test transformations") {
 
 }
 
-TEST_CASE("test misc") {
-	float raw_row_major[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-	float raw_column_major[] = {1,5,9,13,2,6,10,14,3,7,11,15,4,8,12,16};
-	auto m1 = Mat4::FromMemoryRowMajor(raw_row_major);
-	auto m2 = Mat4::FromMemory(raw_column_major);
-	Mat4 m3{{1,5,9,13},{2,6,10,14},{3,7,11,15},{4,8,12,16}};
-	
-	REQUIRE( std::memcmp(begin(m1),begin(m2), sizeof(float)*16) == 0 );
-	REQUIRE( std::memcmp(begin(m1),begin(m3), sizeof(float)*16) == 0 );
+TEST_CASE("test iVec mod") {
+	iMat3 m1 = iMat3{
+		{21, 1, 17},
+		{53, 67, 80},
+		{68, 64, 13}}.T();
+	iMat3 m2= iMat3{
+		{16,  0, 90},
+		{18, 38, 28},
+		{91, 42, 90}}.T();
+	iMat3 np_result= iMat3{
+		{16,  0,  5},
+		{18, 38, 28},
+		{23, 42, 12}}.T();
+	int v1 = 30, v2 = 3;
+	auto result = m2%m1;
+	REQUIRE( 
+		std::memcmp(begin(result),begin(np_result), sizeof(float)*9) == 0 );
 
+	auto result2 = m2%20;
+	auto np_result2 = iMat3{{16,  0, 10},
+       {18, 18,  8},
+	{11,  2, 10}}.T();
+	REQUIRE( 
+		std::memcmp(begin(result2),begin(np_result2), sizeof(float)*9) == 0 );
+
+		auto result3 = 65%m1;
+	auto np_result3 = iMat3{{2,  0, 14},
+       {12, 65, 65},
+	{65,  1,  0}}.T();
+	REQUIRE( 
+		std::memcmp(begin(result3),begin(np_result3), sizeof(float)*9) == 0 );
+}
+
+TEST_CASE("test component-wise ops & string-ify") {
+	iMat4 m1{
+		{  8,  32,  98, -65},
+		{ 33,  86,  59, -59},
+		{ 54,  29,  57, -83},
+		{-97, -78,  -4,  21}};
+	iMat4 m2{
+		{ -8,  54,  -9, -17},
+		{ 26,   8,  50,  77},
+		{ 74, -26,  43,  41},
+		{-70,  85,  19,  18}};
+	iMat4 result_minimum = ElementWiseMin(m1,m2);
+	iMat4 np_result_minimum{
+		{ -8,  32,  -9, -65},
+		{ 26,   8,  50, -59},
+		{ 54, -26,  43, -83},
+		{-97, -78,  -4,  18}};
+
+	REQUIRE(ValueSum(Abs(result_minimum - np_result_minimum)) < .005f);
+	REQUIRE( std::memcmp(MatrixForm(result_minimum).data(), 
+		MatrixForm(np_result_minimum).data(), sizeof(iMat4)) == 0 );
+	
+	Quat q{1,2,3,4};
+	std::string q_result = "1.000000+2.000000i+3.000000j+4.000000k";
+	REQUIRE( std::memcmp(QuaternionForm(q).data(), 
+		q_result.data(), sizeof(q_result)) == 0 );
+
+}
+
+TEST_CASE("test cast") {
+	Mat4 m4{{  8,  32,  98, -65},
+		{ 33,  86,  59, -59},
+		{ 54,  29,  57, -83},
+		{-97, -78,  -4,  21}};
+	auto m3 = Cast<Mat3>(m4);
+	Mat3 m3_{{  8,  32,  98},
+		{ 33,  86,  59},
+		{ 54,  29,  57}};
+	REQUIRE( std::memcmp(&m3, &m3_, sizeof(m3)) == 0 );
+
+	auto v4 = Cast<Vec4>(m4);
+	Vec4 v4_{8,  32,  98, -65};
+	REQUIRE( std::memcmp(&v4, &v4_, sizeof(v4)) == 0 );
+
+	auto v2 = Cast<Vec2>(v4);
+	Vec4 v2_{8,  32};
+	REQUIRE( std::memcmp(&v2, &v2_, sizeof(v2)) == 0 );
+
+	auto m4_diag = Diagonal<Mat4>(1);
+	Mat4 m4_diag_{{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
+	REQUIRE( std::memcmp( \
+		&m4_diag, &m4_diag_, sizeof(m4_diag)) == 0 );
 }

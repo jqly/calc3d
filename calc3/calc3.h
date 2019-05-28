@@ -1,20 +1,15 @@
-#ifndef CALC3
-#define CALC3
+#ifndef CALC_H
+#define CALC_H
 
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
 
 #include <cmath>
 #include <numeric>
 #include <algorithm>
 #include <vector>
 #include <cstring>
+#include <string>
 
-namespace c3d
+namespace calc
 {
 
 ////
@@ -31,28 +26,29 @@ constexpr float eps = 16 * std::numeric_limits<float>::epsilon();
 template<typename ValType, int NumRows, int NumCols>
 class Mat;
 
-template<typename ValType, int NumRows>
-void MemCopy(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+template<typename T>
+struct is_Mat {
+	static constexpr bool value = false;
+};
 
-template<typename ValType, int NumRows>
-void MemCopyRowMajor(Mat<ValType, NumRows, NumRows>& result, const ValType* p);
+template<typename ValType, int NumRows, int NumCols>
+struct is_Mat<Mat<ValType, NumRows, NumCols>> {
+	static constexpr bool value = true;
+};
 
 template<typename ValType>
 class Mat<ValType, 2, 1> {
 public:
+
+	using value_type = ValType;
+	constexpr static int num_rows = 2;
+	constexpr static int num_cols = 1;
 
 	ValType x;
 	ValType y;
 
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 2, 1> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
 };
 
 using Vec2 = Mat<float, 2, 1>;
@@ -62,19 +58,16 @@ template<typename ValType>
 class Mat<ValType, 3, 1> {
 public:
 
+	using value_type = ValType;
+	constexpr static int num_rows = 3;
+	constexpr static int num_cols = 1;
+
 	ValType x;
 	ValType y;
 	ValType z;
 
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 3, 1> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
 };
 
 using Vec3 = Mat<float, 3, 1>;
@@ -84,6 +77,10 @@ template<typename ValType>
 class Mat<ValType, 4, 1> {
 public:
 
+	using value_type = ValType;
+	constexpr static int num_rows = 4;
+	constexpr static int num_cols = 1;
+
 	ValType x;
 	ValType y;
 	ValType z;
@@ -91,13 +88,6 @@ public:
 
 	const ValType& operator[](const int i) const { return (&x)[i]; }
 	ValType& operator[](const int i) { return (&x)[i]; }
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 4, 1> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
 };
 
 using Vec4 = Mat<float, 4, 1>;
@@ -106,6 +96,10 @@ using iVec4 = Mat<int, 4, 1>;
 template<typename ValType>
 class Mat<ValType, 2, 2> {
 public:
+
+	using value_type = ValType;
+	constexpr static int num_rows = 2;
+	constexpr static int num_cols = 2;
 
 	Mat<ValType, 2, 1> col_vec_0;
 	Mat<ValType, 2, 1> col_vec_1;
@@ -118,30 +112,6 @@ public:
 		std::swap((*this)[0][1], (*this)[1][0]);
 		return *this;
 	}
-
-	static Mat<ValType, 2, 2> Eye()
-	{
-		Mat<ValType, 2, 2> m{};
-		for (int i = 0; i < 2; ++i)
-			m[i][i] = 1;
-		return m;
-	}
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 2, 2> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
-
-	static auto FromMemoryRowMajor(const ValType* p)
-	{
-		Mat<ValType, 2, 2> result;
-		for (int row = 0; row < NumRows; ++row)
-			for (int col = 0; col < NumRows; ++col)
-				result[col][row] = p[row*NumRows+col];
-		return result;
-	}
 };
 
 using Mat2 = Mat<float, 2, 2>;
@@ -150,6 +120,10 @@ using iMat2 = Mat<int, 2, 2>;
 template<typename ValType>
 class Mat<ValType, 3, 3> {
 public:
+
+	using value_type = ValType;
+	constexpr static int num_rows = 3;
+	constexpr static int num_cols = 3;
 
 	Mat<ValType, 3, 1> col_vec_0;
 	Mat<ValType, 3, 1> col_vec_1;
@@ -165,30 +139,6 @@ public:
 		std::swap((*this)[1][2], (*this)[2][1]);
 		return *this;
 	}
-
-	static Mat<ValType, 3, 3> Eye()
-	{
-		Mat<ValType, 3, 3> m{};
-		for (int i = 0; i < 3; ++i)
-			m[i][i] = 1;
-		return m;
-	}
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 3, 3> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
-
-	static auto FromMemoryRowMajor(const ValType* p)
-	{
-		Mat<ValType, 3, 3> result;
-		for (int row = 0; row < 3; ++row)
-			for (int col = 0; col < 3; ++col)
-				result[col][row] = p[row*3+col];
-		return result;
-	}
 };
 
 using Mat3 = Mat<float, 3, 3>;
@@ -197,6 +147,10 @@ using iMat3 = Mat<int, 3, 3>;
 template<typename ValType>
 class Mat<ValType, 4, 4> {
 public:
+
+	using value_type = ValType;
+	constexpr static int num_rows = 4;
+	constexpr static int num_cols = 4;
 
 	Mat<ValType, 4, 1> col_vec_0;
 	Mat<ValType, 4, 1> col_vec_1;
@@ -216,30 +170,6 @@ public:
 		std::swap((*this)[2][3], (*this)[3][2]);
 		return *this;
 	}
-
-	static Mat<ValType, 4, 4> Eye()
-	{
-		Mat<ValType, 4, 4> m{};
-		for (int i = 0; i < 4; ++i)
-			m[i][i] = 1;
-		return m;
-	}
-
-	static auto FromMemory(const ValType* p)
-	{
-		Mat<ValType, 4, 4> result;
-		std::memcpy(&result, p, sizeof(result));
-		return result;
-	}
-
-	static auto FromMemoryRowMajor(const ValType* p)
-	{
-		Mat<ValType, 4, 4> result;
-		for (int row = 0; row < 4; ++row)
-			for (int col = 0; col < 4; ++col)
-				result[col][row] = p[row*4+col];
-		return result;
-	}
 };
 
 using Mat4 = Mat<float, 4, 4>;
@@ -251,28 +181,28 @@ using iMat4 = Mat<int, 4, 4>;
 ////
 
 template<typename ValType, int NumRows, int NumCols>
-std::enable_if_t<NumCols == 1, ValType*>
+typename std::enable_if<NumCols == 1, ValType*>::type
 	begin(Mat<ValType, NumRows, NumCols>& a)
 {
 	return (ValType*)(&a[0]);
 }
 
 template<typename ValType, int NumRows, int NumCols>
-std::enable_if_t<NumCols != 1, ValType*>
+typename std::enable_if<NumCols != 1, ValType*>::type
 	begin(Mat<ValType, NumRows, NumCols>& a)
 {
 	return (ValType*)(&a[0][0]);
 }
 
 template<typename ValType, int NumRows, int NumCols>
-std::enable_if_t<NumCols == 1, const ValType*>
+typename std::enable_if<NumCols == 1, const ValType*>::type
 	begin(const Mat<ValType, NumRows, NumCols>& a)
 {
 	return (const ValType*)(&a[0]);
 }
 
 template<typename ValType, int NumRows, int NumCols>
-std::enable_if_t<NumCols != 1, const ValType*>
+typename std::enable_if<NumCols != 1, const ValType*>::type
 	begin(const Mat<ValType, NumRows, NumCols>& a)
 {
 	return (const ValType*)(&a[0][0]);
@@ -306,10 +236,10 @@ return lhs; \
 } \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
-std::enable_if_t< \
+typename std::enable_if< \
 	std::is_same<float, ScalarType>::value \
 	|| std::is_same<int, ScalarType>::value, \
-	Mat<ValType, NumRows, NumCols>> \
+	Mat<ValType, NumRows, NumCols>>::type \
 operator##Op##=(Mat<ValType, NumRows, NumCols> & lhs, const ScalarType & rhs) \
 { \
 for (int i = 0; i < NumRows * NumCols; ++i) \
@@ -329,10 +259,10 @@ return tmp; \
 } \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
-std::enable_if_t< \
+typename std::enable_if< \
 	std::is_same<float, ScalarType>::value \
 	|| std::is_same<int, ScalarType>::value, \
-	Mat<decltype(ValType() + ScalarType()), NumRows, NumCols>> \
+	Mat<decltype(ValType() + ScalarType()), NumRows, NumCols>>::type \
 operator##Op( \
 const Mat<ValType, NumRows, NumCols> & lhs, \
 const ScalarType & rhs) \
@@ -344,10 +274,10 @@ return tmp; \
 } \
 \
 template<typename ValType, typename ScalarType, int NumRows, int NumCols> \
-std::enable_if_t< \
+typename std::enable_if< \
 	std::is_same<float, ScalarType>::value \
 	|| std::is_same<int, ScalarType>::value, \
-	Mat<decltype(ValType() * ScalarType()), NumRows, NumCols>> \
+	Mat<decltype(ValType() * ScalarType()), NumRows, NumCols>>::type \
 operator##Op( \
 const ScalarType & lhs, \
 const Mat<ValType, NumRows, NumCols> & rhs) \
@@ -384,6 +314,51 @@ ElementwiseOpsForMat(-);
 ElementwiseOpsForMat(*);
 ElementwiseOpsForMat(/);
 
+////
+// Mod for int ValType.
+////
+
+template<int NumRows, int NumCols>
+auto operator%=(
+    Mat<int, NumRows, NumCols>& lhs, const Mat<int, NumRows, NumCols>& rhs)
+{
+    for (int i = 0; i < NumRows * NumCols; ++i)
+        * (begin(lhs) + i) %= *(begin(rhs) + i);
+    return lhs;
+}
+
+template<int NumRows, int NumCols>
+auto operator%=(Mat<int, NumRows, NumCols> & lhs, int rhs)
+{
+    for (int i = 0; i < NumRows * NumCols; ++i)
+        * (begin(lhs) + i) %= rhs;
+    return lhs;
+}
+
+template<int NumRows, int NumCols>
+auto operator%(
+    Mat<int, NumRows, NumCols> lhs, const Mat<int, NumRows, NumCols>& rhs)
+{
+    return lhs %= rhs;
+}
+
+template<int NumRows, int NumCols>
+auto operator%(Mat<int, NumRows, NumCols> lhs, int rhs)
+{
+    return lhs %= rhs;
+}
+
+template<int NumRows, int NumCols>
+auto operator%(int lhs, const Mat<int, NumRows, NumCols> & rhs)
+{
+    Mat<int, NumRows, NumCols> tmp{};
+    for (int i = 0; i < NumRows * NumCols; ++i)
+        * (begin(tmp) + i) = lhs % *(begin(rhs) + i);
+    return tmp;
+}
+
+////
+
 template<typename ValType, int NumCols, int NumRows>
 auto Abs(Mat<ValType, NumCols, NumRows> a)
 {
@@ -405,7 +380,8 @@ auto operator-(Mat<ValType, NumCols, NumRows> a)
 ////
 
 template<typename ValType, int NumRows>
-std::enable_if_t<(NumRows>1), Mat<ValType, NumRows, NumRows>>
+typename std::enable_if<
+	(NumRows>1), Mat<ValType, NumRows, NumRows>>::type
 Transpose(Mat<ValType, NumRows, NumRows> m)
 {
 	return m.T();
@@ -530,9 +506,9 @@ ValType ValueSum(const Mat<ValType, NumCols, NumRows>& a)
 
 // Inner-product of two vecters.
 template<int NumRows, int NumCols>
-std::enable_if_t<NumCols == 1, float>
-	Dot(const Mat<float, NumRows, NumCols>& p,
-		const Mat<float, NumRows, NumCols>& q)
+typename std::enable_if<NumCols == 1, float>::type
+Dot(const Mat<float, NumRows, NumCols>& p,
+	const Mat<float, NumRows, NumCols>& q)
 {
 	auto result = p * q;
 	return ValueSum(result);
@@ -540,9 +516,10 @@ std::enable_if_t<NumCols == 1, float>
 
 // Inner-product of matrix A, with vector v (Av).
 template<int MatSize, int NumCols>
-std::enable_if_t<MatSize != 1 && NumCols == 1, Mat<float, MatSize, 1>>
-	Dot(const Mat<float, MatSize, MatSize>& A,
-		const Mat<float, MatSize, NumCols>& v)
+typename std::enable_if<
+	MatSize != 1 && NumCols == 1, Mat<float, MatSize, 1>>::type
+Dot(const Mat<float, MatSize, MatSize>& A,
+	const Mat<float, MatSize, NumCols>& v)
 {
 	Mat<float, MatSize, 1> result{};
 	for (int i = 0; i < MatSize; ++i)
@@ -552,9 +529,10 @@ std::enable_if_t<MatSize != 1 && NumCols == 1, Mat<float, MatSize, 1>>
 
 // Inner-product of two matrices, A and B.
 template<int MatSize>
-std::enable_if_t<MatSize != 1, Mat<float, MatSize, MatSize>>
-	Dot(const Mat<float, MatSize, MatSize>& A,
-		const Mat<float, MatSize, MatSize>& B)
+typename std::enable_if<
+	MatSize != 1, Mat<float, MatSize, MatSize>>::type
+Dot(const Mat<float, MatSize, MatSize>& A,
+	const Mat<float, MatSize, MatSize>& B)
 {
 	Mat<float, MatSize, MatSize> result{};
 	for (int i = 0; i < MatSize; ++i)
@@ -795,41 +773,36 @@ private:
 // Utility functions.
 ////
 
-template<typename ValType, int NumRows>
-Mat<ValType, NumRows, NumRows> Diagonal(const Mat<ValType, NumRows, 1>& v)
+template<typename MatType, typename ScalarType>
+typename std::enable_if<
+	is_Mat<MatType>::value, MatType>::type
+Diagonal(const ScalarType& v)
 {
-	Mat<ValType, NumRows, NumRows> result{};
-	for (int i = 0; i < NumRows; ++i)
-			result[i][i] = v[i];
-	return result;
+	MatType m{};
+	static_assert(
+		MatType::num_rows == MatType::num_cols, "mat size not equal.");
+	for (int d = 0; d < MatType::num_cols; ++d)
+		m[d][d] = static_cast<MatType::value_type>(v);
+	return m;
 }
 
-template<typename ValType, int NumRows>
-typename std::enable_if<(NumRows > 2), Mat<ValType, 2, 1>>::type
-AsVec2(const Mat<ValType, NumRows, 1>& v)
+template<typename MatType1, typename MatType2>
+typename std::enable_if<
+	is_Mat<MatType1>::value && 
+	is_Mat<MatType2>::value, MatType1>::type
+Cast(const MatType2& src)
 {
-	return {v.x, v.y};
-}
+	MatType1 dest{};
+	int min_rows = std::min(MatType1::num_rows, MatType2::num_rows);
+	int min_cols = std::min(MatType1::num_cols, MatType2::num_cols);
+	
+	for (int col = 0; col < min_cols; ++col)
+		for (int row = 0; row < min_rows; ++row) {
+			begin(dest)[row+col*MatType1::num_rows] = \
+				begin(src)[row+col*MatType2::num_rows];
+		}
 
-template<typename ValType, int NumRows>
-typename std::enable_if<(NumRows > 3), Mat<ValType, 3, 1>>::type
-AsVec3(const Mat<ValType, NumRows, 1>& v)
-{
-	return {v.x, v.y, v.z};
-}
-
-template<typename ValType, int NumRows>
-typename std::enable_if<(NumRows > 2), Mat<ValType, 2, 2>>::type
-AsMat2(const Mat<ValType, NumRows, NumRows>& m)
-{
-	return {AsVec2(m[0]), AsVec2(m[1])};
-}
-
-template<typename ValType, int NumRows>
-typename std::enable_if<(NumRows > 3), Mat<ValType, 3, 3>>::type
-AsMat3(const Mat<ValType, NumRows, NumRows>& m)
-{
-	return {AsVec3(m[0]), AsVec3(m[1]), AsVec3(m[2])};
+	return dest;
 }
 
 inline float Deg2Rad(const float deg)
@@ -849,84 +822,50 @@ inline float Clamp(float s, float min, float max)
 }
 
 template<typename ValType, int NumRows, int NumCols>
-auto ComponentWiseMin(
-	Mat<ValType, NumRows, NumCols> v1,
-	const Mat<ValType, NumRows, NumCols>& v2)
+auto ElementWiseMin(
+	Mat<ValType, NumRows, NumCols> lhs,
+	const Mat<ValType, NumRows, NumCols>& rhs)
 {
-	auto v1_iter = begin(v1);
-	auto v2_iter = begin(v2);
-	while (v1_iter!=end(v1)) {
-		*v1_iter = std::min(*v1_iter,*v2_iter);
-		v1_iter++;
-		v2_iter++;
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter!=end(lhs)) {
+		*lhs_iter = std::min(*lhs_iter,*rhs_iter);
+		lhs_iter++;
+		rhs_iter++;
 	}
-	return v1;
+	return lhs;
 }
 
 template<typename ValType, int NumRows, int NumCols>
-auto ComponentWiseMax(
-	Mat<ValType, NumRows, NumCols> v1,
-	const Mat<ValType, NumRows, NumCols>& v2)
+auto ElementWiseMax(
+	Mat<ValType, NumRows, NumCols> lhs,
+	const Mat<ValType, NumRows, NumCols>& rhs)
 {
-	auto v1_iter = begin(v1);
-	auto v2_iter = begin(v2);
-	while (v1_iter!=end(v1)) {
-		*v1_iter = std::max(*v1_iter,*v2_iter);
-		v1_iter++;
-		v2_iter++;
+	auto lhs_iter = begin(lhs);
+	auto rhs_iter = begin(rhs);
+	while (lhs_iter!=end(lhs)) {
+		*lhs_iter = std::max(*lhs_iter,*rhs_iter);
+		lhs_iter++;
+		rhs_iter++;
 	}
-	return v1;
+	return lhs;
 }
 
-template<typename ValType1, typename ValType2, int NumRows, int NumCols>
-bool ComponentWiseLessEqual(
+template<typename ValType1, typename ValType2, int NumRows, int NumCols,
+	typename BinaryPredicate>
+bool ElementWiseCmp(
 	const Mat<ValType1, NumRows, NumCols>& lhs,
-	const Mat<ValType2, NumRows, NumCols>& rhs)
+	const Mat<ValType2, NumRows, NumCols>& rhs,
+	BinaryPredicate op)
 {
 	auto lhs_iter = begin(lhs);
 	auto rhs_iter = begin(rhs);
-	while (lhs_iter != end(lhs))
-		if (*lhs_iter > *rhs_iter)
+	while (lhs_iter != end(lhs)) {
+		if (!op(*lhs_iter, *rhs_iter))
 			return false;
-	return true;
-}
-
-template<typename ValType1, typename ValType2, int NumRows, int NumCols>
-bool ComponentWiseLessThan(
-	const Mat<ValType1, NumRows, NumCols>& lhs,
-	const Mat<ValType2, NumRows, NumCols>& rhs)
-{
-	auto lhs_iter = begin(lhs);
-	auto rhs_iter = begin(rhs);
-	while (lhs_iter != end(lhs))
-		if (*lhs_iter >= *rhs_iter)
-			return false;
-	return true;
-}
-
-template<typename ValType1, typename ValType2, int NumRows, int NumCols>
-bool ComponentWiseGreaterEqual(
-	const Mat<ValType1, NumRows, NumCols>& lhs,
-	const Mat<ValType2, NumRows, NumCols>& rhs)
-{
-	auto lhs_iter = begin(lhs);
-	auto rhs_iter = begin(rhs);
-	while (lhs_iter != end(lhs))
-		if (*lhs_iter < *rhs_iter)
-			return false;
-	return true;
-}
-
-template<typename ValType1, typename ValType2, int NumRows, int NumCols>
-bool ComponentWiseGreaterThan(
-	const Mat<ValType1, NumRows, NumCols>& lhs,
-	const Mat<ValType2, NumRows, NumCols>& rhs)
-{
-	auto lhs_iter = begin(lhs);
-	auto rhs_iter = begin(rhs);
-	while (lhs_iter != end(lhs))
-		if (*lhs_iter <= *rhs_iter)
-			return false;
+		++lhs_iter;
+		++rhs_iter;
+	}
 	return true;
 }
 
@@ -944,7 +883,7 @@ inline Vec3 UnProject(
 
 	Vec4 obj = Dot(Inv(Dot(proj, view)), tmp);
 	obj /= obj.w;
-	return AsVec3(obj);
+	return Cast<Vec3>(obj);
 }
 
 inline Mat2 RotationTransform(float angle)
@@ -972,7 +911,8 @@ inline Mat3 RotationTransform(float angle, Vec3 axis)
 }
 
 template<int NumRows>
-std::enable_if_t<NumRows==2||NumRows==3, Mat<float, NumRows+1,NumRows+1>>
+typename std::enable_if<
+	NumRows==2||NumRows==3, Mat<float, NumRows+1,NumRows+1>>::type
 AffineTransform(
 	const Mat<float, NumRows, NumRows>& basis,
 	const Mat<float, NumRows, 1>& translation)
@@ -1023,7 +963,7 @@ inline Mat4 OrthographicTransform(
 	float left, float right, float bottom, float top, 
 	float near_plane, float far_plane)
 {
-	auto tmp = Mat4::Eye();
+	Mat4 tmp{};
 	tmp[0][0] = 2.f / (right - left);
 	tmp[1][1] = 2.f / (top - bottom);
 	tmp[2][2] = -2.f / (far_plane - near_plane);
@@ -1069,8 +1009,8 @@ public:
 
 		VecType inf = boxes[0].Inf(), sup = boxes[0].Sup();
 		for (int i = 1; i < boxes.size(); ++i) {
-			inf = ComponentWiseMin(inf,boxes[i].Inf());
-			sup = ComponentWiseMax(sup,boxes[i].Sup());
+			inf = ElementWiseMin(inf,boxes[i].Inf());
+			sup = ElementWiseMax(sup,boxes[i].Sup());
 		}
 		auto o = (inf+sup)*.5f;
 		auto size = sup - inf;
@@ -1087,9 +1027,9 @@ bool Intersect(
 	const Box<VecType>& box2, 
 	Box<VecType>& result)
 {
-	auto inf = ComponentWiseMax(box1.Inf(),box2.Inf());
-	auto sup = ComponentWiseMin(box1.Sup(),box2.Sup());
-	if (ComponentWiseLessEqual(inf,sup)) {
+	auto inf = ElementWiseMax(box1.Inf(),box2.Inf());
+	auto sup = ElementWiseMin(box1.Sup(),box2.Sup());
+	if (ElementWiseLessEqual(inf,sup)) {
 		result = Box<VecType>::BoundingBox({inf, sup});
 		return true;
 	}
@@ -1106,8 +1046,8 @@ auto Union(
 		return box2;
 	if (box2.size() == VecType{})
 		return box1;
-	auto inf = ComponentWiseMin(box1.Inf(),box2.Inf());
-	auto sup = ComponentWiseMax(box1.Sup(),box2.Sup());
+	auto inf = ElementWiseMin(box1.Inf(),box2.Inf());
+	auto sup = ElementWiseMax(box1.Sup(),box2.Sup());
 	return Box<VecType>::BoundingBox({inf, sup});
 }
 
@@ -1140,6 +1080,43 @@ inline bool Hit(const Sphere &sphere, const Ray &ray)
 	return true;
 }
 
+////
+// Convert to string.
+////
+
+template<typename ValType, int NumRows, int NumCols>
+std::string MatrixForm(
+	const Mat<ValType, NumRows, NumCols>& a,
+	std::string ldelim="{", std::string rdelim="}", 
+	std::string val_sep=",", std::string vec_sep=",")
+{
+	std::string result;
+	auto p = begin(a);
+	if (NumCols!=1)
+		result += ldelim;
+	for (int row = 0; row < NumRows; ++row) {
+		result += ldelim;
+		for (int col = 0; col < NumCols; ++col) {
+			result += std::to_string(p[col*NumRows+row]);
+			if (col != NumCols-1)
+				result += val_sep;
+		}
+		result += rdelim;
+		if (row!=NumRows-1)
+			result += vec_sep;
+	}
+	if (NumCols!=1)
+		result += rdelim;
+	return result;
+}
+
+inline std::string QuaternionForm(const Quat& quat)
+{
+    return std::to_string(quat.w) + "+" + 
+        std::to_string(quat.x) + "i" + "+"+
+        std::to_string(quat.y) + "j" + "+"+
+        std::to_string(quat.z) + "k";
+}
 
 
 }
