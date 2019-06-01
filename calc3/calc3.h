@@ -993,24 +993,19 @@ public:
 	VecType o;
 	VecType size;
 
-	Box() = default;
-
-	Box(VecType o, VecType size)
-		:o{o},size{size}
-	{}
-
 	VecType Sup() { return o+.5f*size; }
 	VecType Inf() { return o-.5f*size; }
 
-	static Box<VecType> BoundingBox(const std::vector<Box<VecType>>& boxes)
+	static Box<VecType> FromPoints(
+		const std::vector<VecType>& points)
 	{
-		if (boxes.size() == VecType{})
+		if (points.size() == 0)
 			return Box<VecType>{};
 
-		VecType inf = boxes[0].Inf(), sup = boxes[0].Sup();
-		for (int i = 1; i < boxes.size(); ++i) {
-			inf = ElementWiseMin(inf,boxes[i].Inf());
-			sup = ElementWiseMax(sup,boxes[i].Sup());
+		VecType inf = points[0], sup = points[0];
+		for (int i = 1; i < points.size(); ++i) {
+			inf = ElementWiseMin(inf,points[i]);
+			sup = ElementWiseMax(sup,points[i]);
 		}
 		auto o = (inf+sup)*.5f;
 		auto size = sup - inf;
@@ -1030,7 +1025,7 @@ bool Intersect(
 	auto inf = ElementWiseMax(box1.Inf(),box2.Inf());
 	auto sup = ElementWiseMin(box1.Sup(),box2.Sup());
 	if (ElementWiseLessEqual(inf,sup)) {
-		result = Box<VecType>::BoundingBox({inf, sup});
+		result = Box<VecType>::FromPoints({inf, sup});
 		return true;
 	}
 	else
@@ -1048,7 +1043,7 @@ auto Union(
 		return box1;
 	auto inf = ElementWiseMin(box1.Inf(),box2.Inf());
 	auto sup = ElementWiseMax(box1.Sup(),box2.Sup());
-	return Box<VecType>::BoundingBox({inf, sup});
+	return Box<VecType>::FromPoints({inf, sup});
 }
 
 class Sphere {
@@ -1060,7 +1055,8 @@ public:
 inline bool Hit(const Sphere &sphere, const Ray &ray)
 {
 	auto b = 2.f*Dot(ray.o - sphere.o, ray.d);
-	auto c = Dot(ray.o - sphere.o, ray.o - sphere.o) - sphere.r * sphere.r;
+	auto c = Dot(ray.o - sphere.o, ray.o - sphere.o) - \
+		sphere.r * sphere.r;
 	auto delta = b * b - 4 * c;
 	if (delta <= eps)
 		return false;
