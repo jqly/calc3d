@@ -1076,44 +1076,6 @@ inline bool Hit(const Sphere &sphere, const Ray &ray)
 	return true;
 }
 
-////
-// Convert to string.
-////
-
-template<typename ValType, int NumRows, int NumCols>
-std::string MatrixForm(
-	const Mat<ValType, NumRows, NumCols>& a,
-	std::string ldelim="{", std::string rdelim="}", 
-	std::string val_sep=",", std::string vec_sep=",")
-{
-	std::string result;
-	auto p = begin(a);
-	if (NumCols!=1)
-		result += ldelim;
-	for (int row = 0; row < NumRows; ++row) {
-		result += ldelim;
-		for (int col = 0; col < NumCols; ++col) {
-			result += std::to_string(p[col*NumRows+row]);
-			if (col != NumCols-1)
-				result += val_sep;
-		}
-		result += rdelim;
-		if (row!=NumRows-1)
-			result += vec_sep;
-	}
-	if (NumCols!=1)
-		result += rdelim;
-	return result;
-}
-
-inline std::string QuaternionForm(const Quat& quat)
-{
-    return std::to_string(quat.w) + "+" + 
-        std::to_string(quat.x) + "i" + "+"+
-        std::to_string(quat.y) + "j" + "+"+
-        std::to_string(quat.z) + "k";
-}
-
 
 }
 
