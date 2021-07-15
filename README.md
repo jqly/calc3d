@@ -10,4 +10,4 @@ The implementation includes Quad/Mat/Transform; all functions are tested and use
 
 I refactored many times; now, it is clean and self-explanatory. Hope clac3d will help :)
 
-P.S., it is clogged with c++ template/meta stuff. ~~so calc3d is aesthetically pleasing~~;)
+Warning: it is clogged with c++ template/meta stuff that even myself couldn't understand now.
