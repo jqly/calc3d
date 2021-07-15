@@ -12,4 +12,4 @@ The implementation includes Quad/Mat/Transform; all functions are tested and use
 
 ### Warning
 
-It is clogged with c++ template/meta stuff that even myself couldn't understand now.
+It is clogged with c++ template/meta stuff that even myself couldn't understand now 😂
