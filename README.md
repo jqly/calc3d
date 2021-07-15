@@ -8,6 +8,8 @@ When I working on my own renderer 2 years ago (2019), I made this baby `calc3` l
 It is header-only and fairly complete for a decent renderer.
 The implementation includes Quad/Mat/Transform; all functions are tested and used in my own renderer.
 
-I refactored many times; now, it is clean and self-explanatory. Hope clac3d will help :)
+*I refactored many times; now, it is clean and self-explanatory. Hope clac3d will help :)*
 
-Warning: it is clogged with c++ template/meta stuff that even myself couldn't understand now.
+### Warning
+
+It is clogged with c++ template/meta stuff that even myself couldn't understand now.
