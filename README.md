@@ -5,7 +5,7 @@ TL;DR:
 2. Grab `calc3/clac3.h` and use it at once for your renderer development!
 
 When I working on my own renderer, I made this baby `calc3` library.
-It is header-only and has implemented fairly complete tools for a decent renderer.
-The tools includes Quad/Mat/Transform; all functions are tested and used in my own renderer.
+It is header-only and fairly complete for a decent renderer.
+The implementation includes Quad/Mat/Transform; all functions are tested and used in my own renderer.
 
 I refactored many times on this baby 3-D math library; it is clean and self-explain. Hope it will help :)
