@@ -6,7 +6,7 @@ TL;DR:
 
 When I working on my own renderer 2 years ago (2019), I made this baby `calc3` library.
 It is header-only and fairly complete for a decent renderer.
-The implementation includes Quad/Mat/Transform; all functions are tested and used in my own renderer.
+The implementation includes Quad/Mat/Transform/Intersection; all functions are tested and used in my own renderer.
 
 *I refactored many times; now, it is clean and self-explanatory. Hope clac3d will help :)*
 
